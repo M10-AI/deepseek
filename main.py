@@ -3,49 +3,6 @@ from openai import OpenAI
 import requests
 import json
 
-# Custom CSS styling
-st.markdown(
-    """
-    <style>
-    .model-title, .stSelectbox, .stCheckbox, .stExpander {
-        position: fixed;
-        left: 120px; 
-        z-index: 1000;
-        background-color: #0e1117;
-    }
-    
-    .model-title {
-        top: 130px;
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-    
-    .stSelectbox {
-        top: 190px;
-        width: 300px;
-        padding: 2px;
-        border-radius: 5px;
-    }
-    
-    .stCheckbox {
-        top: 240px;
-    }
-    
-    .stExpander {
-        top: 350px;
-        width: 300px;
-        background-color: #0e1117;
-    }
-
-    .stApp {
-        padding-top: 150px;
-        padding-left: 350px;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
 models = [
     "DeepSeek-R1", 
     "Meta-Llama-3-1-405B-Instruct-FP8",
@@ -53,39 +10,97 @@ models = [
     "Meta-Llama-3-3-70B-Instruct"
 ]
 
-# Fixed position elements
-st.markdown('<div class="model-title">Choose model</div>', unsafe_allow_html=True)
 
-left, right = st.columns([0.4, 0.6])
+with st.sidebar:
+    tab1, tab2, tab3 = st.tabs(["Start", "Info", "About us"])
 
-with left:
-    selected_model = st.selectbox(
-        "Choose model",
-        models,
-        key="selected_model",
-        label_visibility="collapsed",
-        index=models.index(st.session_state.get("selected_model", models[0]))
-    )
-    
-    # Web search toggle
-    web_search = st.checkbox(
-        'Enable Web Search',
-        value=False,
-        key="web_search",
-        help="Enable real-time web search capabilities"
-    )
+    with tab1:
+        
+        st.title("Choose model")
 
-    # Expander with formatted text
-    with st.expander("DeepSeek Info", expanded=False):
-        st.markdown("""
-            Everything between </think> and </think> is the model's "thoughts" trying to understand your prompt. 
-            Everything after is the actual response.  
+        selected_model = st.selectbox(
+            "Choose model",
+            models,
+            key="selected_model",
+            label_visibility="collapsed",
+            index=models.index(st.session_state.get("selected_model", models[0]))
+        )
+        
+        # Web search toggle
+        web_search = st.checkbox(
+            'Enable Web Search',
+            value=False,
+            key="web_search",
+            help="Enable real-time web search capabilities"
+        )
 
-            If you want to support us, feel free to PayPal us any amount you wish:
-            https://paypal.me/m10ai
-              
-            *Powered by Akash Network*  
-        """)
+    with tab2:
+ #       Expander with formatted text
+        with st.expander("App Info", expanded=False):
+            st.markdown("""This model is powered by the [Akash Chat API](https://chat.akash.network/) from [Akash Networks](https://akash.network/).  
+                        
+Everything between *<think>* and *</think>* is the model's "thoughts" trying to understand your prompt. 
+Everything after is the actual response.  
+
+Besides DeepSeek the app features:  
+- Meta's Llama 3.1 405B parameter model  
+- Nvidia's Nemotron 70B model  
+- Meta's Llamas 3.3 70B model
+                        
+All models are equipped with Retrieval-Agumented Generation (RAG) to search the web.
+                        
+            """)
+
+    with tab3:
+        with st.expander("M10 AI: Student Association", expanded=False):
+            st.markdown(
+            """Positioning Gothenburg as Sweden's Premier AI Hub through:  
+- Industry-aligned workshops  
+- Open source projects  
+- Academic-corporate partnerships""")
+
+            st.divider()
+
+            st.markdown("""
+Support our mission:  
+[
+Contribute by PayPal
+](
+https://paypal.me/m10ai
+) """)
+            
+            st.divider()
+
+            st.markdown("""
+  
+Or connect with our growing network of AI enthusiasts and professionals:  """,        
+        )
+            st.markdown("""
+<style>
+.social-icon {
+    width: 45px !important;  /* Adjust this value to change size */
+    height: 45px !important;
+    margin: 0 5px;          /* Space between icons */
+    transition: transform 0.3s ease;
+}
+.social-icon:hover {
+    transform: scale(1.1);
+}
+</style>
+
+<div style="display: flex; justify-content: center; gap: 15px; margin: 20px 0;">
+    <a href="https://www.linkedin.com/company/m10-ai" target="_blank">
+        <img class="social-icon" src="https://cdn-icons-png.flaticon.com/256/174/174857.png" alt="LinkedIn">
+    </a>
+    <a href="https://linktr.ee/m10ai" target="_blank">
+        <img class="social-icon" src="https://cdn.iconscout.com/icon/free/png-256/free-linktree-logo-icon-download-in-svg-png-gif-file-formats--social-brand-communication-company-pack-logos-icons-9631079.png" alt="LinkTree">
+    </a>
+    <a href="https://www.instagram.com/_m10ai_/" target="_blank">
+        <img class="social-icon" src="https://cdn-icons-png.flaticon.com/256/2111/2111463.png" alt="Instagram">
+    </a>
+</div>
+""", unsafe_allow_html=True)
+            
 
 # Initialize OpenAI client after model selection
 client = OpenAI(
@@ -114,6 +129,8 @@ def search_web(query):
     
     return "\n".join(search_info)
 
+st.image("noback.png", caption="Welcome to our DeepSeek clone")
+
 # Chat history initialization
 if "messages" not in st.session_state:
     st.session_state.messages = []
@@ -124,16 +141,16 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Handle user input
-if prompt := st.chat_input("What is up?"):
+if prompt := st.chat_input("What can I help you with?"):
     st.session_state.messages.append({"role": "user", "content": prompt})
     
     # Web search context
     context = ""
     if st.session_state.web_search:
-        with st.status("🌐 Searching the web..."):
-            search_results = search_web(prompt)
-            context = f"Web search results:\n{search_results}\n\nBased on this information: "
-    
+#        with st.status("🌐 Searching the web..."):
+        search_results = search_web(prompt)
+        context = f"Web search results:\n{search_results}\n\nBased on this information: "
+
     full_prompt = f"{context}{prompt}"
     
     # Update displayed messages
